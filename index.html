@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Bolinhas</title>
+    <script src="https://docs.opencv.org/4.5.0/opencv.js" type="text/javascript"></script>
+</head>
+
+<body>
+    <h2>Contador de Bolinhas</h2>
+
+    <div>
+        <div class="inputoutput">
+            <img id="imageSrc" alt="No Image" />
+            <div class="caption">imageSrc <input type="file" id="fileInput" name="file" /></div>
+        </div>
+        <div class="inputoutput">
+            <canvas id="canvasOutput"></canvas>
+            <div class="caption">canvasOutput</div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+
+        let imgElement = document.getElementById('imageSrc');
+        let inputElement = document.getElementById('fileInput');
+
+        inputElement.addEventListener('change', (e) => {
+            imgElement.src = URL.createObjectURL(e.target.files[0]);
+        }, false);
+
+        imgElement.onload = function () {
+            let input = cv.imread(imgElement);
+            let final = new cv.Mat();
+            let M = cv.Mat.ones(5, 5, cv.CV_8U);
+            let anchor = new cv.Point(-1, -1);
+            let ksize = new cv.Size(3, 3);
+
+
+            if (input.cols > 1000 || input.rows > 1000) {
+                let dsize = new cv.Size(0, 0);
+                cv.resize(input, input, dsize, 0.25, 0.25, cv.INTER_AREA);
+            }
+
+            cv.cvtColor(input, final, cv.COLOR_RGBA2GRAY, 0);
+            cv.GaussianBlur(final, final, ksize, 0, 0, cv.BORDER_CONSTANT)
+
+            let circles = new cv.Mat();
+            let color = new cv.Scalar(200, 200, 0, 0);
+            cv.HoughCircles(final, circles, cv.HOUGH_GRADIENT,
+                1, 40, 75, 40, 20, 1000);
+
+            if (circles.cols > 1000) {
+                alert("Muitos circulos!")
+                return;
+            }
+
+            for (let i = 0; i < circles.cols; ++i) {
+                let x = circles.data32F[i * 3];
+                let y = circles.data32F[i * 3 + 1];
+                let radius = circles.data32F[i * 3 + 2];
+                let center = new cv.Point(x, y);
+                cv.circle(input, center, radius, color);
+            }
+
+
+
+            //cv.threshold(final, final, 120, 200, cv.THRESH_BINARY);
+            //let contours = new cv.MatVector();
+            //let hierarchy = new cv.Mat();
+            //cv.findContours(final, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
+            //for (let i = 0; i < contours.size(); ++i) {
+            //    let color = new cv.Scalar(Math.round(Math.random() * 255), Math.round(Math.random() * 255),
+            //        Math.round(Math.random() * 255));
+            //    cv.drawContours(final, contours, i, color, 1, cv.LINE_8, hierarchy, 100);
+            //}
+
+
+
+
+
+            cv.imshow('canvasOutput', input);
+            final.delete();
+            input.delete();
+            alert(`${circles.cols} bolinhas.`)
+        };
+
+    </script>
+</body>s
+
+</html>
